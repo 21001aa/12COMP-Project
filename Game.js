@@ -65,3 +65,4 @@ function createPaths() {
   // Draw fourth path
   line(0, 400, windowWidth, 400);
 }
+Yea
