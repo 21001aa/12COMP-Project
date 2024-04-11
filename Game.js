@@ -4,11 +4,13 @@
 /*******************************************************/
 
 // Define variables for the groom sprite
+let groomX = 50;
 let groomY;
 let groomHeight = 50; // Size of groom sprite
 let speed = 5; // Speed of groom
 let moveUp = false;
 let moveDown = false;
+let moveRight = false;
 
 // Define variables for score and lives
 let score = 0;
@@ -23,7 +25,35 @@ const START_SCREEN = 0;
 const STORY_SCREEN = 1;
 const INSTRUCTION_SCREEN = 2;
 const GAME_SCREEN = 3;
-let ScreenChange = START_SCREEN;
+const YOU_WON_SCREEN = 4; // New screen state
+let screenchange = START_SCREEN; // Corrected variable name
+
+// Timer variables
+let startTime;
+const gameDuration = 30 * 1000; // 30 seconds in milliseconds
+
+// Purple square sprite
+let purpleSprite;
+
+/*******************************************************/
+// Function to create sprite (explicit definition)
+/*******************************************************/
+function createSprite(x, y, width, height) {
+  let sprite = {
+    position: createVector(x, y),
+    width: width,
+    height: height,
+    visible: true,
+    shapeColor: color(255),
+    draw: function() {
+      if (this.visible) {
+        fill(this.shapeColor);
+        rect(this.position.x, this.position.y, this.width, this.height);
+      }
+    }
+  };
+  return sprite;
+}
 
 /*******************************************************/
 // setup()
@@ -34,6 +64,13 @@ function setup() {
   groomY = height / 2;
   // Create obstacles
   createObstacles();
+  // Start the timer
+  startTime = millis();
+
+  // Create purple sprite
+  purpleSprite = createSprite(width - 100, height / 2, 30, 30);
+  purpleSprite.shapeColor = color(128, 0, 128);
+  purpleSprite.visible = false;
 }
 
 /*******************************************************/
@@ -43,15 +80,33 @@ function draw() {
   // Clear the background to white
   background(255);
   
-  // Draw different screens based on ScreenChange
-  if (ScreenChange === START_SCREEN) {
+  // Draw different screens based on screenchange
+  if (screenchange === START_SCREEN) {
     drawStartScreen();
-  } else if (ScreenChange === STORY_SCREEN) {
+  } else if (screenchange === STORY_SCREEN) {
     drawStoryScreen();
-  } else if (ScreenChange === INSTRUCTION_SCREEN) {
+  } else if (screenchange === INSTRUCTION_SCREEN) {
     drawInstructionScreen();
-  } else if (ScreenChange === GAME_SCREEN) {
-    drawGameScreen();
+  } else if (screenchange === GAME_SCREEN) {
+    // Check if 30 seconds have passed
+    if (millis() - startTime < gameDuration) {
+      drawGameScreen();
+    } else {
+      // After 30 seconds, allow the groom to move right
+      if (keyCode === RIGHT_ARROW) {
+        moveRight = true;
+      }
+      // Draw groom
+      fill(255, 255, 255);
+      ellipse(groomX, groomY + groomHeight / 2, 20, 20);
+      
+      // Move groom
+      if (moveRight && groomX < width) {
+        groomX += speed;
+      }
+    }
+  } else if (screenchange === YOU_WON_SCREEN) {
+    drawYouWonScreen();
   }
 }
 
@@ -63,7 +118,7 @@ function drawStartScreen() {
   fill(0);
   textSize(40);
   textAlign(CENTER, CENTER);
-  text("Stupid Groom", width/2, height/2 - 50);
+  text(" Stupid Groom", width/2, height/2 - 50);
   textSize(20);
   text("Press ENTER to start", width/2, height/2 + 50);
 }
@@ -78,6 +133,7 @@ function drawStoryScreen() {
   textAlign(CENTER, CENTER);
   text("Story Screen", width/2, height/2 - 50);
   textSize(20);
+  text("An absolute disaster has appeared on the groom's and bride's wedding day! They are expected to get married in a beautiful forest, unfortunately, the groom left all the wedding accessories in the forest with the broken-down car! What a stupid Groom! We should help him get the items back and make his bride happy! Let's go!! ", width/2, height/2);
   text("Press ENTER to continue", width/2, height/2 + 50);
 }
 
@@ -103,7 +159,7 @@ function drawGameScreen() {
   
   // Draw groom
   fill(255, 255, 255);
-  ellipse(50, groomY + groomHeight / 2, 20, 20);
+  ellipse(groomX, groomY + groomHeight / 2, 20, 20);
   
   // Move groom
   if (moveUp && groomY > 0) {
@@ -146,14 +202,14 @@ function drawGameScreen() {
 /*******************************************************/
 function keyPressed() {
   if (keyCode === ENTER) {
-    if (screenChange === START_SCREEN) {
-      screenChange = STORY_SCREEN;
-    } else if (screenChange === STORY_SCREEN) {
-      screenChange = INSTRUCTION_SCREEN;
-    } else if (screenChange === INSTRUCTION_SCREEN) {
-      screenChange = GAME_SCREEN;
+    if (screenchange === START_SCREEN) {
+      screenchange = STORY_SCREEN;
+    } else if (screenchange === STORY_SCREEN) {
+      screenchange = INSTRUCTION_SCREEN;
+    } else if (screenchange === INSTRUCTION_SCREEN) {
+      screenchange = GAME_SCREEN;
     }
-  } else if (screenChange === GAME_SCREEN) {
+  } else if (screenchange === GAME_SCREEN) {
     if (keyCode === UP_ARROW) {
       moveUp = true;
     } else if (keyCode === DOWN_ARROW) {
@@ -166,7 +222,7 @@ function keyPressed() {
 // Function to handle key releases
 /*******************************************************/
 function keyReleased() {
-  if (ScreenChange === GAME_SCREEN) {
+  if (screenchange === GAME_SCREEN) {
     if (keyCode === UP_ARROW) {
       moveUp = false;
     } else if (keyCode === DOWN_ARROW) {
@@ -200,16 +256,43 @@ function createPaths() {
 // Function to create obstacles
 /*******************************************************/
 function createObstacles() {
-  for (let i = 0; i < 2; i++) {
-    let x = random(width + 20, width + 200);
-    let y = random(height / 4, height * 3 / 4);
-    pinkBoxes.push({x: x, y: y});
-  }
-  
-  for (let i = 0; i < 1; i++) {
-    let x = random(width + 20, width + 200);
-    let y = random(height / 4, height * 3 / 4);
-    greenBoxes.push({x: x, y: y});
+  // Create pink and green boxes
+  for (let i = 0; i < 4; i++) {
+    let xPink = random(width + 20, width + 200);
+    let yPink = 0; // Default y-coordinate
+    switch(i) { // Distribute obstacles across all four paths
+      case 0: // Top path
+        yPink = random(height / 8, height / 4);
+        break;
+      case 1: // Second path
+        yPink = random(height / 2, height * 5 / 8);
+        break;
+      case 2: // Third path
+        yPink = random(height * 3 / 4, height * 7 / 8);
+        break;
+      case 3: // Bottom path
+        yPink = random(height * 15 / 16, height);
+        break;
+    }
+    pinkBoxes.push({x: xPink, y: yPink});
+    
+    let xGreen = random(width + 20, width + 200);
+    let yGreen = 0; // Default y-coordinate
+    switch(i) { // Distribute obstacles across all four paths
+      case 0: // Top path
+        yGreen = random(height / 8, height / 4);
+        break;
+      case 1: // Second path
+        yGreen = random(height / 2, height * 5 / 8);
+        break;
+      case 2: // Third path
+        yGreen = random(height * 3 / 4, height * 7 / 8);
+        break;
+      case 3: // Bottom path
+        yGreen = random(height * 15 / 16, height);
+        break;
+    }
+    greenBoxes.push({x: xGreen, y: yGreen});
   }
 }
 
@@ -217,19 +300,17 @@ function createObstacles() {
 // Function to move obstacles
 /*******************************************************/
 function moveObstacles() {
+  // Move pink and green boxes
   for (let i = 0; i < pinkBoxes.length; i++) {
     pinkBoxes[i].x -= speed;
     if (pinkBoxes[i].x < -20) {
       pinkBoxes[i].x = random(width + 20, width + 200);
-      pinkBoxes[i].y = random(height / 4, height * 3 / 4);
     }
   }
-  
   for (let i = 0; i < greenBoxes.length; i++) {
     greenBoxes[i].x -= speed;
     if (greenBoxes[i].x < -20) {
       greenBoxes[i].x = random(width + 20, width + 200);
-      greenBoxes[i].y = random(height / 4, height * 3 / 4);
     }
   }
 }
@@ -239,7 +320,7 @@ function moveObstacles() {
 /*******************************************************/
 function checkPinkCollisions() {
   for (let i = 0; i < pinkBoxes.length; i++) {
-    if (50 + 20 > pinkBoxes[i].x && 50 < pinkBoxes[i].x + 20 && groomY + groomHeight > pinkBoxes[i].y && groomY < pinkBoxes[i].y + 20) {
+    if (groomX + 20 > pinkBoxes[i].x && groomX < pinkBoxes[i].x + 20 && groomY + groomHeight > pinkBoxes[i].y && groomY < pinkBoxes[i].y + 20) {
       score++;
       pinkBoxes[i].x = random(width + 20, width + 200);
       pinkBoxes[i].y = random(height / 4, height * 3 / 4);
@@ -252,7 +333,7 @@ function checkPinkCollisions() {
 /*******************************************************/
 function checkGreenCollisions() {
   for (let i = 0; i < greenBoxes.length; i++) {
-    if (50 + 20 > greenBoxes[i].x && 50 < greenBoxes[i].x + 20 && groomY + groomHeight > greenBoxes[i].y && groomY < greenBoxes[i].y + 20) {
+    if (groomX + 20 > greenBoxes[i].x && groomX < greenBoxes[i].x + 20 && groomY + groomHeight > greenBoxes[i].y && groomY < greenBoxes[i].y + 20) {
       lives--;
       greenBoxes[i].x = random(width + 20, width + 200);
       greenBoxes[i].y = random(height / 4, height * 3 / 4);
@@ -269,8 +350,20 @@ function checkGreenCollisions() {
 function gameOver() {
   // Display game over message
   fill(255, 255, 255);
-  textSize(50);
+  textSize(50)
   textAlign(CENTER, CENTER);
   text("Game Over", width / 2, height / 2);
+  noLoop(); // Stop the draw loop
+}
+
+/*******************************************************/
+// Function to draw the "You Won!" screen
+/*******************************************************/
+function drawYouWonScreen() {
+  // Display "You Won!" message
+  fill(255, 255, 255);
+  textSize(50);
+  textAlign(CENTER, CENTER);
+  text("You Won!", width / 2, height / 2);
   noLoop(); // Stop the draw loop
 }
