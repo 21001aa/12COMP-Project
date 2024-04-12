@@ -26,6 +26,7 @@ const STORY_SCREEN = 1;
 const INSTRUCTION_SCREEN = 2;
 const GAME_SCREEN = 3;
 const YOU_WON_SCREEN = 4; // New screen state
+const GAME_OVER_SCREEN = 5; // New screen state for game over
 let screenchange = START_SCREEN; // Corrected variable name
 
 // Timer variables
@@ -92,21 +93,14 @@ function draw() {
     if (millis() - startTime < gameDuration) {
       drawGameScreen();
     } else {
-      // After 30 seconds, allow the groom to move right
-      if (keyCode === RIGHT_ARROW) {
-        moveRight = true;
-      }
-      // Draw groom
-      fill(255, 255, 255);
-      ellipse(groomX, groomY + groomHeight / 2, 20, 20);
-      
-      // Move groom
-      if (moveRight && groomX < width) {
-        groomX += speed;
-      }
+      // Transition to the "You Won!" screen
+      screenchange = YOU_WON_SCREEN;
     }
   } else if (screenchange === YOU_WON_SCREEN) {
+    drawWhiteScreen();
     drawYouWonScreen();
+  } else if (screenchange === GAME_OVER_SCREEN) {
+    drawGameOverScreen();
   }
 }
 
@@ -208,6 +202,8 @@ function keyPressed() {
       screenchange = INSTRUCTION_SCREEN;
     } else if (screenchange === INSTRUCTION_SCREEN) {
       screenchange = GAME_SCREEN;
+    } else if (screenchange === YOU_WON_SCREEN || screenchange === GAME_OVER_SCREEN) {
+      resetGame();
     }
   } else if (screenchange === GAME_SCREEN) {
     if (keyCode === UP_ARROW) {
@@ -338,7 +334,7 @@ function checkGreenCollisions() {
       greenBoxes[i].x = random(width + 20, width + 200);
       greenBoxes[i].y = random(height / 4, height * 3 / 4);
       if (lives === 0) {
-        gameOver();
+        screenchange = GAME_OVER_SCREEN;
       }
     }
   }
@@ -347,13 +343,14 @@ function checkGreenCollisions() {
 /*******************************************************/
 // Function for game over
 /*******************************************************/
-function gameOver() {
+function drawGameOverScreen() {
   // Display game over message
   fill(255, 255, 255);
   textSize(50)
   textAlign(CENTER, CENTER);
   text("Game Over", width / 2, height / 2);
-  noLoop(); // Stop the draw loop
+  textSize(20);
+  text("Press ENTER to replay", width / 2, height / 2 + 50);
 }
 
 /*******************************************************/
@@ -365,5 +362,39 @@ function drawYouWonScreen() {
   textSize(50);
   textAlign(CENTER, CENTER);
   text("You Won!", width / 2, height / 2);
-  noLoop(); // Stop the draw loop
+  textSize(20);
+  text("Press ENTER to replay", width / 2, height / 2 + 50);
+}
+
+/*******************************************************/
+// Function to draw a white screen
+/*******************************************************/
+function drawWhiteScreen() {
+  // Draw a white background
+  background(255);
+}
+
+/*******************************************************/
+// Function to reset the game
+/*******************************************************/
+function resetGame() {
+  // Reset variables
+  score = 0;
+  lives = 3;
+  groomX = 50;
+  groomY = height / 2;
+  pinkBoxes = [];
+  greenBoxes = [];
+  createObstacles();
+  startTime = millis();
+  screenchange = START_SCREEN;
+}
+
+/*******************************************************/
+// Function to handle mouse clicks
+/*******************************************************/
+function mouseClicked() {
+  if (screenchange === YOU_WON_SCREEN || screenchange === GAME_OVER_SCREEN) {
+    resetGame();
+  }
 }
