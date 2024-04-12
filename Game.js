@@ -7,7 +7,7 @@
 let groomX = 50;
 let groomY;
 let groomHeight = 50; // Size of groom sprite
-let speed = 5; // Speed of groom
+let speed = 7; // Faster speed of groom
 let moveUp = false;
 let moveDown = false;
 let moveRight = false;
@@ -31,10 +31,7 @@ let screenchange = START_SCREEN; // Corrected variable name
 
 // Timer variables
 let startTime;
-const gameDuration = 30 * 1000; // 30 seconds in milliseconds
-
-// Purple square sprite
-let purpleSprite;
+const gameDuration = 60 * 1000; // 1 minute in milliseconds
 
 /*******************************************************/
 // Function to create sprite (explicit definition)
@@ -63,24 +60,19 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   // Set position of the groom on the middle of the screen
   groomY = height / 2;
-  // Create obstacles
-  createObstacles();
   // Start the timer
   startTime = millis();
-
-  // Create purple sprite
-  purpleSprite = createSprite(width - 100, height / 2, 30, 30);
-  purpleSprite.shapeColor = color(128, 0, 128);
-  purpleSprite.visible = false;
+  // Create obstacles
+  createObstacles();
 }
 
 /*******************************************************/
 // draw()
 /*******************************************************/
 function draw() {
-  // Clear the background to white
-  background(255);
-  
+  // Clear the background to pastel green
+  background(204, 255, 204);
+
   // Draw different screens based on screenchange
   if (screenchange === START_SCREEN) {
     drawStartScreen();
@@ -89,7 +81,7 @@ function draw() {
   } else if (screenchange === INSTRUCTION_SCREEN) {
     drawInstructionScreen();
   } else if (screenchange === GAME_SCREEN) {
-    // Check if 30 seconds have passed
+    // Check if 1 minute has passed
     if (millis() - startTime < gameDuration) {
       drawGameScreen();
     } else {
@@ -97,7 +89,6 @@ function draw() {
       screenchange = YOU_WON_SCREEN;
     }
   } else if (screenchange === YOU_WON_SCREEN) {
-    drawWhiteScreen();
     drawYouWonScreen();
   } else if (screenchange === GAME_OVER_SCREEN) {
     drawGameOverScreen();
@@ -125,10 +116,13 @@ function drawStoryScreen() {
   fill(0);
   textSize(40);
   textAlign(CENTER, CENTER);
-  text("Story Screen", width/2, height/2 - 50);
+  text("Story Screen", width/2, height/2 - 100);
   textSize(20);
-  text("An absolute disaster has appeared on the groom's and bride's wedding day! They are expected to get married in a beautiful forest, unfortunately, the groom left all the wedding accessories in the forest with the broken-down car! What a stupid Groom! We should help him get the items back and make his bride happy! Let's go!! ", width/2, height/2);
-  text("Press ENTER to continue", width/2, height/2 + 50);
+  text("Once upon a time, on the day of his wedding, the groom realized", width/2, height/2 - 50);
+  text("he forgot to buy flowerboxes for his beloved bride!", width/2, height/2 - 20);
+  text("Now he's on a mission to collect flowerboxes from the forest", width/2, height/2 + 10);
+  text("and make her happy. Help him gather as many flowerboxes as possible!", width/2, height/2 + 40);
+  text("Press ENTER to continue", width/2, height/2 + 80);
 }
 
 /*******************************************************/
@@ -139,22 +133,27 @@ function drawInstructionScreen() {
   fill(0);
   textSize(40);
   textAlign(CENTER, CENTER);
-  text("Instruction Screen", width/2, height/2 - 50);
+  text("Instructions Screen", width/2, height/2 - 100);
   textSize(20);
-  text("Press ENTER to continue", width/2, height/2 + 50);
+  text("Use the UP and DOWN arrow keys to move the groom up and down.", width/2, height/2 - 50);
+  text("Avoid the ivyboxes (green) and collect as many flowerboxes as you can! Also careful with the bottom path, the boxes might trick you!", width/2, height/2 - 20);
+  text("Press ENTER to start the game", width/2, height/2 + 50);
 }
 
 /*******************************************************/
 // Function to draw the game screen
 /*******************************************************/
 function drawGameScreen() {
+  // Clear the background to white
+  background(255);
+  
   // Draw paths
   createPaths();
   
   // Draw groom
   fill(255, 255, 255);
   ellipse(groomX, groomY + groomHeight / 2, 20, 20);
-  
+
   // Move groom
   if (moveUp && groomY > 0) {
     groomY -= speed;
@@ -162,33 +161,64 @@ function drawGameScreen() {
   if (moveDown && groomY < height - groomHeight) {
     groomY += speed;
   }
-  
+
   // Move obstacles
   moveObstacles();
-  
+
   // Draw pink boxes
   for (let i = 0; i < pinkBoxes.length; i++) {
     fill(255, 192, 203);
     rect(pinkBoxes[i].x, pinkBoxes[i].y, 20, 20);
   }
-  
+
   // Draw green boxes
   for (let i = 0; i < greenBoxes.length; i++) {
     fill(144, 238, 144);
     rect(greenBoxes[i].x, greenBoxes[i].y, 20, 20);
   }
-  
+
   // Check for collisions with pink boxes
   checkPinkCollisions();
-  
+
   // Check for collisions with green boxes
   checkGreenCollisions();
-  
+
   // Display score and lives
   fill(0);
+  noStroke();
   textSize(20);
+  textAlign(LEFT);
   text("Score: " + score, 20, 30);
   text("Lives: " + lives, 20, 60);
+
+  // Check if the player got no flowerboxes after 1 minute
+  if (millis() - startTime > gameDuration && score === 0) {
+    fill(255, 0, 0);
+    textSize(20);
+    textAlign(CENTER, CENTER);
+    text("Awww, you didn't get any!", width / 2, height - 50);
+  }
+}
+
+/*******************************************************/
+// Function to create paths
+/*******************************************************/
+function createPaths() {
+  // Draw paths
+  stroke(34, 139, 34); // Forest green color
+  strokeWeight(10);
+  
+  // Draw first path
+  line(0, height / 4, windowWidth, height / 4);
+  
+  // Draw second path
+  line(0, height / 2, windowWidth, height / 2);
+  
+  // Draw third path
+  line(0, height * 3 / 4, windowWidth, height * 3 / 4);
+  
+  // Draw fourth path
+  line(0, height, windowWidth, height);
 }
 
 /*******************************************************/
@@ -204,6 +234,7 @@ function keyPressed() {
       screenchange = GAME_SCREEN;
     } else if (screenchange === YOU_WON_SCREEN || screenchange === GAME_OVER_SCREEN) {
       resetGame();
+      screenchange = GAME_SCREEN;
     }
   } else if (screenchange === GAME_SCREEN) {
     if (keyCode === UP_ARROW) {
@@ -228,33 +259,12 @@ function keyReleased() {
 }
 
 /*******************************************************/
-// Function to create paths
-/*******************************************************/
-function createPaths() {
-  // Draw paths
-  stroke(144, 180, 148);
-  strokeWeight(10);
-  
-  // Draw first path
-  line(0, height / 4, windowWidth, height / 4);
-  
-  // Draw second path
-  line(0, height / 2, windowWidth, height / 2);
-  
-  // Draw third path
-  line(0, height * 3 / 4, windowWidth, height * 3 / 4);
-  
-  // Draw fourth path
-  line(0, height, windowWidth, height);
-}
-
-/*******************************************************/
 // Function to create obstacles
 /*******************************************************/
 function createObstacles() {
   // Create pink and green boxes
   for (let i = 0; i < 4; i++) {
-    let xPink = random(width + 20, width + 200);
+    let xPink = random(width + 20, width + 400); // Spread boxes more out
     let yPink = 0; // Default y-coordinate
     switch(i) { // Distribute obstacles across all four paths
       case 0: // Top path
@@ -272,7 +282,7 @@ function createObstacles() {
     }
     pinkBoxes.push({x: xPink, y: yPink});
     
-    let xGreen = random(width + 20, width + 200);
+    let xGreen = random(width + 20, width + 400); // Spread boxes more out
     let yGreen = 0; // Default y-coordinate
     switch(i) { // Distribute obstacles across all four paths
       case 0: // Top path
@@ -300,13 +310,13 @@ function moveObstacles() {
   for (let i = 0; i < pinkBoxes.length; i++) {
     pinkBoxes[i].x -= speed;
     if (pinkBoxes[i].x < -20) {
-      pinkBoxes[i].x = random(width + 20, width + 200);
+      pinkBoxes[i].x = random(width + 20, width + 400); // Spread boxes more out
     }
   }
   for (let i = 0; i < greenBoxes.length; i++) {
     greenBoxes[i].x -= speed;
     if (greenBoxes[i].x < -20) {
-      greenBoxes[i].x = random(width + 20, width + 200);
+      greenBoxes[i].x = random(width + 20, width + 400); // Spread boxes more out
     }
   }
 }
@@ -318,7 +328,7 @@ function checkPinkCollisions() {
   for (let i = 0; i < pinkBoxes.length; i++) {
     if (groomX + 20 > pinkBoxes[i].x && groomX < pinkBoxes[i].x + 20 && groomY + groomHeight > pinkBoxes[i].y && groomY < pinkBoxes[i].y + 20) {
       score++;
-      pinkBoxes[i].x = random(width + 20, width + 200);
+      pinkBoxes[i].x = random(width + 20, width + 400); // Spread boxes more out
       pinkBoxes[i].y = random(height / 4, height * 3 / 4);
     }
   }
@@ -331,7 +341,7 @@ function checkGreenCollisions() {
   for (let i = 0; i < greenBoxes.length; i++) {
     if (groomX + 20 > greenBoxes[i].x && groomX < greenBoxes[i].x + 20 && groomY + groomHeight > greenBoxes[i].y && groomY < greenBoxes[i].y + 20) {
       lives--;
-      greenBoxes[i].x = random(width + 20, width + 200);
+      greenBoxes[i].x = random(width + 20, width + 400); // Spread boxes more out
       greenBoxes[i].y = random(height / 4, height * 3 / 4);
       if (lives === 0) {
         screenchange = GAME_OVER_SCREEN;
@@ -345,7 +355,7 @@ function checkGreenCollisions() {
 /*******************************************************/
 function drawGameOverScreen() {
   // Display game over message
-  fill(255, 255, 255);
+  fill(0, 0, 0);
   textSize(50)
   textAlign(CENTER, CENTER);
   text("Game Over", width / 2, height / 2);
@@ -358,20 +368,13 @@ function drawGameOverScreen() {
 /*******************************************************/
 function drawYouWonScreen() {
   // Display "You Won!" message
-  fill(255, 255, 255);
+  fill(0, 0, 0);
   textSize(50);
   textAlign(CENTER, CENTER);
-  text("You Won!", width / 2, height / 2);
+  text("Congratulations!", width / 2, height / 2 - 50);
+  text("You got " + score + " flowerboxes for the bride!", width / 2, height / 2);
   textSize(20);
   text("Press ENTER to replay", width / 2, height / 2 + 50);
-}
-
-/*******************************************************/
-// Function to draw a white screen
-/*******************************************************/
-function drawWhiteScreen() {
-  // Draw a white background
-  background(255);
 }
 
 /*******************************************************/
@@ -387,7 +390,6 @@ function resetGame() {
   greenBoxes = [];
   createObstacles();
   startTime = millis();
-  screenchange = START_SCREEN;
 }
 
 /*******************************************************/
@@ -396,5 +398,6 @@ function resetGame() {
 function mouseClicked() {
   if (screenchange === YOU_WON_SCREEN || screenchange === GAME_OVER_SCREEN) {
     resetGame();
+    screenchange = GAME_SCREEN;
   }
 }
